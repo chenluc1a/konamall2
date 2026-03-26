@@ -108,9 +108,11 @@ export default function CheckoutPage() {
           window.location.href = pay.payment_url;
           return;
         }
+        toast.error('결제 준비에 실패했습니다. 주문 상세에서 결제를 다시 진행해 주세요.');
+        router.push(`/orders/${orderId}`);
+        return;
       } catch (payErr) {
-        // PG 미설정 시 테스트 완료 처리
-        toast.success('주문이 완료되었습니다. (결제는 테스트 모드)');
+        toast.error('결제 준비에 실패했습니다. 주문 상세에서 결제를 다시 진행해 주세요.');
         router.push(`/orders/${orderId}`);
         return;
       }

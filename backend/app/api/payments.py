@@ -5,6 +5,7 @@ Payments API Router
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from typing import Any, Dict, Optional
 
 from app.core.config import settings
 from app.core.deps import get_current_user
@@ -15,7 +16,7 @@ from app.services.payment import get_payment_gateway
 router = APIRouter(prefix="/payments", tags=["Payments"])
 
 
-def _normalize_payment_url(data: dict | None) -> str | None:
+def _normalize_payment_url(data: Optional[Dict[str, Any]]) -> Optional[str]:
     """결제사별 prepare 응답 URL 키를 단일 payment_url로 정규화."""
     if not data:
         return None
@@ -107,8 +108,8 @@ async def approve_callback(
     order_id: int,
     pg_token: str = "",
     gateway: str = "kakao_pay",
-    payment_id: str | None = None,
-    tid: str | None = None,
+    payment_id: Optional[str] = None,
+    tid: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
     """
@@ -168,7 +169,7 @@ async def approve_callback(
 
 @router.get("/cancel")
 async def cancel_callback(
-    order_id: int | None = None,
+    order_id: Optional[int] = None,
     gateway: str = "kakao_pay",
 ):
     """PG 결제 취소 리다이렉트 콜백."""
@@ -183,7 +184,7 @@ async def cancel_callback(
 
 @router.get("/fail")
 async def fail_callback(
-    order_id: int | None = None,
+    order_id: Optional[int] = None,
     gateway: str = "kakao_pay",
 ):
     """PG 결제 실패 리다이렉트 콜백."""
