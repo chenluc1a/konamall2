@@ -8,7 +8,8 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "KonaMall"
     DEBUG: bool = True
-    BASE_URL: str = "http://localhost:3000"
+    BASE_URL: str = "http://localhost:8000"
+    FRONTEND_URL: str = "http://localhost:3000"
     
     # Database
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/konamall"

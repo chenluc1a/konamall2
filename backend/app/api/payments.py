@@ -30,8 +30,14 @@ def _normalize_payment_url(data: Optional[Dict[str, Any]]) -> Optional[str]:
 
 
 def _callback_url(path: str) -> str:
-    """PG 리다이렉트용 콜백 URL 생성 (/api prefix 포함)."""
+    """PG 리다이렉트용 콜백 URL 생성."""
     return f"{settings.BASE_URL}/api/payments/{path}"
+
+
+def _frontend_callback_url(path: str) -> str:
+    """프론트엔드 결제 결과 페이지 URL 생성."""
+    frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+    return f"{frontend_url}{path}"
 
 
 def _get_gateway(gateway_type: str):
@@ -43,10 +49,11 @@ def _get_gateway(gateway_type: str):
         client_id=getattr(settings, "NAVER_PAY_CLIENT_ID", ""),
         client_secret=getattr(settings, "NAVER_PAY_CLIENT_SECRET", ""),
         chain_id=getattr(settings, "NAVER_PAY_CHAIN_ID", ""),
-        approval_url=_callback_url("approve"),
-        cancel_url=_callback_url("cancel"),
-        fail_url=_callback_url("fail"),
-        return_url=_callback_url("approve"),
+        # 승인 완료 → 프론트 결제 결과 페이지로 리다이렉트
+        approval_url=_frontend_callback_url("/payment/result"),
+        cancel_url=_frontend_callback_url("/payment/result?status=cancel"),
+        fail_url=_frontend_callback_url("/payment/result?status=fail"),
+        return_url=_frontend_callback_url("/payment/result"),
     )
 
 
