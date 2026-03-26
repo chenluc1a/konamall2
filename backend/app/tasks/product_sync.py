@@ -180,26 +180,65 @@ def sync_all_suppliers() -> dict:
 
 @celery_app.task(name="app.tasks.product_sync.translate_product")
 def translate_product(product_id: int) -> dict:
-    """상품 번역 (한글)"""
+    """상품 번역 (한글) — DeepL 1차 + GPT-4o-mini 2차 교정 파이프라인."""
+    from app.services.translate import translate_product_name, translate_text
+
     db = SessionLocal()
-    
     try:
         product = db.query(Product).filter(Product.id == product_id).first()
         if not product:
-            return {"error": "Product not found"}
-        
-        # TODO: 실제 번역 API 연동 (Google Translate, DeepL 등)
-        # 현재는 placeholder
-        if not product.name_ko and product.name:
-            product.name_ko = product.name
-        if not product.description_ko and product.description:
-            product.description_ko = product.description
-        
-        db.commit()
-        
+            return {"error": "Product not found", "product_id": product_id}
+
+        changed = False
+
+        # 상품명 번역 (2단계 파이프라인)
+        if product.name and not product.name_ko:
+            product.name_ko = translate_product_name(product.name)
+            changed = True
+            logger.info(f"[{product_id}] 상품명 번역: {product.name} → {product.name_ko}")
+
+        # 상품 설명 번역 (DeepL 직역)
+        if product.description and not product.description_ko:
+            product.description_ko = translate_text(product.description)
+            changed = True
+
+        if changed:
+            db.commit()
+
         return {
             "product_id": product_id,
-            "translated": True
+            "translated": changed,
+            "name_ko": product.name_ko,
         }
+    except Exception as e:
+        logger.error(f"translate_product 실패 (id={product_id}): {e}")
+        db.rollback()
+        raise
     finally:
         db.close()
+
+
+@celery_app.task(name="app.tasks.product_sync.translate_untranslated_batch")
+def translate_untranslated_batch(limit: int = 50) -> dict:
+    """
+    name_ko가 없는 상품을 배치로 번역 큐에 적재.
+    스케줄러에서 주기적으로 호출 (매 30분 등).
+    """
+    db = SessionLocal()
+    try:
+        products = (
+            db.query(Product)
+            .filter(Product.is_active == True, Product.name_ko == None)
+            .limit(limit)
+            .all()
+        )
+        task_ids = []
+        for p in products:
+            task = translate_product.delay(p.id)
+            task_ids.append({"product_id": p.id, "task_id": task.id})
+
+        logger.info(f"번역 배치 적재: {len(task_ids)}건")
+        return {"queued": len(task_ids), "tasks": task_ids}
+    finally:
+        db.close()
+

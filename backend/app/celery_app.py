@@ -54,10 +54,11 @@ celery_app.conf.update(
             "task": "app.tasks.order_process.update_all_order_statuses",
             "schedule": 60 * 60,  # 1시간
         },
-        # 매 30분마다 배송 추적 업데이트
-        "update-shipments-every-30-min": {
-            "task": "app.tasks.order_process.update_shipment_tracking",
+        # 매 30분마다 미번역 상품 번역 배치
+        "translate-untranslated-every-30-min": {
+            "task": "app.tasks.product_sync.translate_untranslated_batch",
             "schedule": 30 * 60,  # 30분
+            "kwargs": {"limit": 50},
         },
     },
 )

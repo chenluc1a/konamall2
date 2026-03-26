@@ -59,7 +59,20 @@ class Settings(BaseSettings):
     NAVER_PAY_CLIENT_ID: Optional[str] = None
     NAVER_PAY_CLIENT_SECRET: Optional[str] = None
     NAVER_PAY_CHAIN_ID: Optional[str] = None
-    
+
+    # Translation
+    DEEPL_API_KEY: Optional[str] = None
+    OPENAI_API_KEY: Optional[str] = None
+    OPENAI_MODEL: str = "gpt-4o-mini"
+    TRANSLATION_CACHE_TTL: int = 86400  # 24h (seconds)
+
+    # Cloudflare R2 (Image CDN)
+    R2_ACCOUNT_ID: Optional[str] = None
+    R2_ACCESS_KEY_ID: Optional[str] = None
+    R2_SECRET_ACCESS_KEY: Optional[str] = None
+    R2_BUCKET_NAME: str = "konamall-images"
+    R2_PUBLIC_URL: Optional[str] = None  # e.g. https://images.konamall.com
+
     class Config:
         env_file = ".env"
         case_sensitive = True
